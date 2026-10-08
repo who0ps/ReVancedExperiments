@@ -59,6 +59,25 @@ jobs:
           ORG_GRADLE_PROJECT_githubPackagesUsername: ${{ github.actor }}
           ORG_GRADLE_PROJECT_githubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
 
+      # ReVanced Manager adds a patch source from a URL that returns this small JSON,
+      # then downloads the .rvp from "download_url".
+      - name: Publish ReVanced Manager bundle info
+        if: steps.release.outputs.new_release_published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.new_release_git_tag }}
+        run: |
+          RVP=$(gh release view "$TAG" --json assets --jq '[.assets[].name | select(endswith(".rvp"))][0]')
+          jq -n \
+            --arg download_url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${RVP}" \
+            --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%S)" \
+            --arg version "$TAG" \
+            --arg description "ReVanced Experiments $TAG" \
+            '{download_url: $download_url, created_at: $created_at, version: $version, description: $description}' \
+            > patches-bundle.json
+          cat patches-bundle.json
+          gh release upload "$TAG" patches-bundle.json --clobber
+
       - name: Attest
         if: steps.release.outputs.new_release_published == 'true'
         uses: actions/attest-build-provenance@v3

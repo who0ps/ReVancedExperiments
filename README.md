@@ -43,6 +43,12 @@ Compatible with `org.telegram.messenger`; most patches also support `org.telegra
 
 You can use [ReVanced CLI](https://github.com/ReVanced/revanced-cli) or [ReVanced Manager](https://github.com/ReVanced/revanced-manager) to use ReVanced Experiments.
 
+To add the patches to ReVanced Manager, choose "Enter URL" and use:
+
+```
+https://github.com/who0ps/ReVancedExperiments/releases/latest/download/patches-bundle.json
+```
+
 
 ### 📙 Contributing
 
