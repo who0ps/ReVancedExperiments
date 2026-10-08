@@ -21,6 +21,22 @@ Some of the features the patches provide are:
   export activities, etc.
 * ✨ **And much more!**
 
+## 📱 Telegram patches
+
+| Patch | What it does | Enabled by default |
+|-------|--------------|--------------------|
+| Hide sponsored ads | Hides sponsored messages in channels and bots | Yes |
+| Hide video ads | Removes the sponsored banner at the bottom of the full-screen video player | Yes |
+| Hide comments button | Hides the comments button under channel posts | No |
+| Disable Auto Update | Stops the update notification and the blocking "update required" screen | Yes |
+| Bypass Integrity | Bypasses the integrity check so login works on patched apps | Yes |
+| Unlock Pro | Unlocks client-side Pro features | Yes |
+| Hide typing indicator | Hides your typing indicator from other users | Yes |
+| Download Speed Boost | Boosts download speed | Yes |
+
+Compatible with `org.telegram.messenger`; most patches also support `org.telegram.messenger.web` and
+`uz.unnarsx.cherrygram`. "Hide video ads" is declared for `org.telegram.messenger` only.
+
 ## 🚀 How to get started
 
 > **Note**: ReVanced Manager v2.0+ is required.
