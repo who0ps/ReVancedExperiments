@@ -3,11 +3,13 @@ package li.auna.patches.telegram.bypassintegrity
 import app.revanced.patcher.*
 import app.revanced.patcher.patch.BytecodePatchContext
 
-internal val BytecodePatchContext.bypassIntegrityMethod by gettingFirstMethodDeclaratively(
+/** Parses the SafetyNet JWS payload (basicIntegrity / ctsProfileMatch) before requesting the Firebase SMS. */
+internal val BytecodePatchContext.bypassIntegrityMethod by gettingFirstMethodDeclarativelyOrNull(
     "basicIntegrity", "ctsProfileMatch",
 )
 
-internal val BytecodePatchContext.spoofSignatureMethod by gettingFirstMethodDeclaratively {
+internal val BytecodePatchContext.spoofSignatureMethod by gettingFirstMethodDeclarativelyOrNull {
     name("getCertificateSHA256Fingerprint")
-    definingClass("AndroidUtilities;")
+    definingClass("Lorg/telegram/messenger/AndroidUtilities;")
+    returnType("Ljava/lang/String;")
 }
