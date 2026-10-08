@@ -104,6 +104,59 @@
 
 * Migrated to patcher v22 API. ReVanced Manager v2.0+ is required.
 
+# 1.0.0 (2026-10-08)
+
+
+### Bug Fixes
+
+* **kustom:** Find correct method ([8af3f33](https://github.com/who0ps/ReVancedExperiments/commit/8af3f3384de35be3ea0c5f7ab9700a2ed2fe5c2c))
+* make Bypass Integrity fingerprints explicit and diagnosable ([b54afdb](https://github.com/who0ps/ReVancedExperiments/commit/b54afdb1869f397ab8ef3cdc901a249074153bc7))
+* relax Bypass Integrity fingerprint for newer Telegram builds ([f68f441](https://github.com/who0ps/ReVancedExperiments/commit/f68f441bb77ef8155396bec06b7a3b6fde3d91e7))
+* Remove api declaration ([f16bbb7](https://github.com/who0ps/ReVancedExperiments/commit/f16bbb7321ab29e77ee9258d826e875405f0e225))
+* **telegram:** Find correct method ([197f9ee](https://github.com/who0ps/ReVancedExperiments/commit/197f9ee4e046135a2b298861485d57b11a405099))
+* **telegram:** Use correct patch name and description ([895eabc](https://github.com/who0ps/ReVancedExperiments/commit/895eabcec818b45baa63ffc8ad02a6ae53c05e53))
+* update Disable Auto Update fingerprints for newer Telegram builds ([f7e795e](https://github.com/who0ps/ReVancedExperiments/commit/f7e795e01b45ba08cf4fafc23880e31bbdfe0841))
+* update Hide sponsored ads fingerprint for newer Telegram builds ([4b28687](https://github.com/who0ps/ReVancedExperiments/commit/4b28687d8fa92ff92172ce312f4a4f744a611e0d))
+
+
+### chore
+
+* Merge branch `dev` to `main` ([#31](https://github.com/who0ps/ReVancedExperiments/issues/31)) ([332ed74](https://github.com/who0ps/ReVancedExperiments/commit/332ed74d50f138b179bd2abd3a00cdf11d2b762d)), closes [#50](https://github.com/who0ps/ReVancedExperiments/issues/50)
+
+
+### Features
+
+* add Hide comments button patch for Telegram ([bfcf096](https://github.com/who0ps/ReVancedExperiments/commit/bfcf09639344e609cda1b1d6b969e282135e9810))
+* Add patches, utils ([8452993](https://github.com/who0ps/ReVancedExperiments/commit/84529931c0964ddba9986f66043db62393444ac2))
+* **all:** Add `Deobfuscate Smob` patch ([21a9f61](https://github.com/who0ps/ReVancedExperiments/commit/21a9f616541de548a0a6e8137ba87e0952ce7bdc))
+* **all:** Add `Deobfuscate Smob` patch ([db3f248](https://github.com/who0ps/ReVancedExperiments/commit/db3f2486471912c9efe39c809cd065b219c9219a))
+* disable Hide comments button by default ([fb82d18](https://github.com/who0ps/ReVancedExperiments/commit/fb82d1842e4defaadb35cdb24cda707a5cfd4567))
+* **instagram:** Add `BypassIntegrityPatch` patch ([b8c5fa4](https://github.com/who0ps/ReVancedExperiments/commit/b8c5fa4b2f4c23d1fbe25651eb528b43b606fbc4))
+* **Telegram:** Add `Bypass Integrity` patch ([037ec88](https://github.com/who0ps/ReVancedExperiments/commit/037ec88741df3a948c062684ace7632db7eb18b5))
+* **Telegram:** Add `Download Speed Boost` patch ([00c5cc3](https://github.com/who0ps/ReVancedExperiments/commit/00c5cc360d298729250ab3679739cd54e3a56d1d))
+* **Telegram:** Add initial `Disable Auto Updates` patch ([c698265](https://github.com/who0ps/ReVancedExperiments/commit/c698265dddf619a21d4167a474afc522a6a58027))
+* **telegram:** Add Pro patch ([aa06215](https://github.com/who0ps/ReVancedExperiments/commit/aa0621508c9aabf492612941d292a4a6601508ca))
+* **telegram:** Support latest version of telegram ([fa9c062](https://github.com/who0ps/ReVancedExperiments/commit/fa9c062d0cc1f39ee18f5edbbbad9f3a30739cc1))
+* **Telegram:** Update `Bypass Integrity` patch ([a4bc92d](https://github.com/who0ps/ReVancedExperiments/commit/a4bc92d0c12179302c9cf7e6d4646f051a4b778f))
+* **Telegram:** Update `Disable Auto Updates` patch ([58468a7](https://github.com/who0ps/ReVancedExperiments/commit/58468a7de2e55861501289c968eace16fb540fdd))
+
+
+### BREAKING CHANGES
+
+* Migrated to patcher v22 API. ReVanced Manager v2.0+ is required.
+
+* chore: Release v2.0.0-dev.1 [skip ci]
+
+# [2.0.0-dev.1](https://github.com/Aunali321/ReVancedExperiments/compare/v1.10.0-dev.1...v2.0.0-dev.1) (2026-03-20)
+
+### Features
+
+* Require ReVanced Manager v2.0+ ([5dff894](https://github.com/Aunali321/ReVancedExperiments/commit/5dff8946ea2e8daed052c2058443b5a07e9aca7c))
+
+### BREAKING CHANGES
+
+* Migrated to patcher v22 API. ReVanced Manager v2.0+ is required.
+
 # [2.0.0](https://github.com/Aunali321/ReVancedExperiments/compare/v1.9.0...v2.0.0) (2026-03-23)
 
 
