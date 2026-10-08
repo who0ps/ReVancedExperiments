@@ -7,6 +7,7 @@ import li.auna.util.returnEarly
 val hideCommentsPatch = bytecodePatch(
     name = "Hide comments button",
     description = "Hides the comments button under channel posts",
+    use = false,
 ) {
     compatibleWith(
         "org.telegram.messenger",
