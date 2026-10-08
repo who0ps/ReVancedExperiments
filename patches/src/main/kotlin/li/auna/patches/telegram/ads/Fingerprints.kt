@@ -3,8 +3,10 @@ package li.auna.patches.telegram.ads
 import app.revanced.patcher.*
 import app.revanced.patcher.patch.BytecodePatchContext
 
-internal val BytecodePatchContext.hideSponsoredMessagesMethod by gettingFirstMethodDeclaratively {
-    name("addSponsoredMessages")
-    definingClass("ChatActivity;")
-    returnType("V")
+/** MessagesController.getSponsoredMessages(long): returns null when there are no ads. */
+internal val BytecodePatchContext.getSponsoredMessagesMethod by gettingFirstMethodDeclaratively {
+    name("getSponsoredMessages")
+    definingClass("Lorg/telegram/messenger/MessagesController;")
+    returnType("Lorg/telegram/messenger/MessagesController\$SponsoredMessagesInfo;")
+    parameterTypes("J")
 }

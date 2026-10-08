@@ -15,6 +15,6 @@ val hideAdsPatch = bytecodePatch(
     )
 
     apply {
-        hideSponsoredMessagesMethod.returnEarly()
+        getSponsoredMessagesMethod.returnEarly()
     }
 }
