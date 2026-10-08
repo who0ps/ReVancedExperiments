@@ -13,8 +13,9 @@ val unlockProPatch = bytecodePatch(
     )
 
     apply {
-        checkAppUpdateMethod.returnEarly()
+        // Never report a new version as available, so no update badge/popup is created.
         setNewAppVersionAvailableMethod.returnEarly(false)
-        blockViewUpdateMethod.returnEarly()
+        // Never show the blocking "update required" screen.
+        showBlockingUpdateMethod.returnEarly()
     }
 }
