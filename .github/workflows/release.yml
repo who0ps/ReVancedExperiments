@@ -44,6 +44,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # The Gradle build signs the Maven publication with gpg and fails without a secret key.
+      # A throwaway key is enough here; the signature is not meant for verification.
+      - name: Create throwaway GPG key
+        run: >
+          gpg --batch --pinentry-mode loopback --passphrase ''
+          --quick-generate-key "ci <ci@users.noreply.github.com>" default default never
+
       - name: Release
         uses: cycjimmy/semantic-release-action@v5
         id: release
