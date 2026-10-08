@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.0...v1.0.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* publish ReVanced Manager bundle info with each release ([af0198b](https://github.com/who0ps/ReVancedExperiments/commit/af0198b408eaa935960338a81bd0ceb50a1fa692))
+
 # 1.0.0 (2026-10-08)
 
 
