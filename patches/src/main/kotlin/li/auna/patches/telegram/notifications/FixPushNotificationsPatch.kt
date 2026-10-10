@@ -124,10 +124,13 @@ val fixPushNotificationsPatch = bytecodePatch(
                 }
             }
         }
-        val getPackageInfoCount = preflightCounts.filterKeys { it.name == "getPackageInfo" }.values.sum()
-        if (getPackageInfoCount == 0) {
+        // Match the upstream behavior: several signature-query APIs can be redirected.
+        // Do not require PackageManager.getPackageInfo specifically.
+        val preflightRedirectCount = preflightCounts.values.sum()
+        if (preflightRedirectCount == 0) {
+            val searched = redirects.joinToString { "${it.owner}->${it.name}" }
             throw PatchException(PATCH_NAME +
-                ": no PackageManager.getPackageInfo call sites were found; no patch was applied")
+                ": no supported signature-query call sites were found ($searched); no changes were applied")
         }
 
         val extensionDef = classDefs.firstOrNull { it.type == EXTENSION_CLASS }
@@ -174,9 +177,9 @@ val fixPushNotificationsPatch = bytecodePatch(
         }
 
         val totalRedirects = callCounts.values.sum()
-        if (callCounts.filterKeys { it.name == "getPackageInfo" }.values.sum() == 0 || totalRedirects == 0) {
+        if (totalRedirects == 0) {
             throw PatchException(PATCH_NAME +
-                ": no PackageManager.getPackageInfo call sites were patched; refusing to continue")
+                ": no supported signature-query calls were redirected; refusing to continue")
         }
 
         println(PATCH_NAME + ": embedded " + certificates.size + " original signer certificate(s); redirected " +
