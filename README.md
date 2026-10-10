@@ -33,9 +33,10 @@ Some of the features the patches provide are:
 | Unlock Pro | Unlocks client-side Pro features | Yes |
 | Hide typing indicator | Hides your typing indicator from other users | Yes |
 | Download Speed Boost | Boosts download speed | Yes |
+| Fix Push Notifications | Spoofs Telegram-local signing-certificate queries to help restore Firebase push registration after patching (experimental) | Yes |
 
 Compatible with `org.telegram.messenger`; most patches also support `org.telegram.messenger.web` and
-`uz.unnarsx.cherrygram`. "Hide video ads" is declared for `org.telegram.messenger` only.
+`uz.unnarsx.cherrygram`. "Hide video ads" is declared for `org.telegram.messenger` only. "Fix Push Notifications" currently targets `org.telegram.messenger` and is experimental; it changes local signature-query results only and does not change Android's installed APK signature. Validate it against the Telegram APK version being patched.
 
 ## 🚀 How to get started
 
