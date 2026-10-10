@@ -4,6 +4,7 @@
 
 package li.auna.patches.telegram.notifications
 
+import app.revanced.patcher.*
 import app.revanced.patcher.extensions.replaceInstruction
 import app.revanced.patcher.patch.BytecodePatchContext
 import app.revanced.patcher.patch.PatchException
