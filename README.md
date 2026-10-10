@@ -59,7 +59,7 @@ You can find the contribution guidelines [here](CONTRIBUTING.md).
 ### 🛠️ Building
 
 To build ReVanced Experiments,
-you can follow the [ReVanced documentation](https://github.com/ReVanced/revanced-documentation).
+you can follow the [ReVanced documentation](https://github.com/ReVanced/revanced-documentation). For an Android-ready `.rvp` bundle for ReVanced Manager/CLI, run `./gradlew clean` followed by `./gradlew :patches:buildAndroid`; the plain JVM `:patches:build` task does not perform the DEX conversion required by Android patch-bundle loading.
 
 ## 📜 Licence
 
