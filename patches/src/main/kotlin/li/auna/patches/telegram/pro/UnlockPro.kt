@@ -7,6 +7,7 @@ import li.auna.util.returnEarly
 val unlockProPatch = bytecodePatch(
     name = "Unlock Pro",
     description = "Unlock client-side Pro features",
+    use = false,
 ) {
     compatibleWith(
         "org.telegram.messenger",
