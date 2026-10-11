@@ -9,6 +9,7 @@ import app.revanced.patcher.extensions.replaceInstruction
 import app.revanced.patcher.patch.BytecodePatchContext
 import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -71,7 +72,10 @@ private val redirects = listOf(
 )
 
 private val supportedInvokeOpcodes = setOf(
-    "INVOKE_VIRTUAL", "INVOKE_VIRTUAL_RANGE", "INVOKE_INTERFACE", "INVOKE_INTERFACE_RANGE",
+    Opcode.INVOKE_VIRTUAL,
+    Opcode.INVOKE_VIRTUAL_RANGE,
+    Opcode.INVOKE_INTERFACE,
+    Opcode.INVOKE_INTERFACE_RANGE,
 )
 
 @Suppress("unused")
@@ -97,7 +101,7 @@ val fixPushNotificationsPatch = bytecodePatch(
             !classDef.type.startsWith("Lapp/revanced/extension/") &&
                 classDef.methods.any { method ->
                     method.implementation?.instructions?.any { instruction ->
-                        instruction.opcode.name in supportedInvokeOpcodes &&
+                        instruction.opcode in supportedInvokeOpcodes &&
                             ((instruction as? ReferenceInstruction)?.reference as? MethodReference)?.let { ref ->
                                 redirects.any { it.matches(ref) }
                             } == true
@@ -109,7 +113,7 @@ val fixPushNotificationsPatch = bytecodePatch(
             for (method in classDef.methods) {
                 val implementation = method.implementation ?: continue
                 for (instruction in implementation.instructions) {
-                    if (instruction.opcode.name !in supportedInvokeOpcodes) continue
+                    if (instruction.opcode !in supportedInvokeOpcodes) continue
                     val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference ?: continue
                     val redirect = redirects.firstOrNull { it.matches(reference) } ?: continue
                     val registerCount = invokeRegisters(instruction).size
@@ -163,7 +167,8 @@ val fixPushNotificationsPatch = bytecodePatch(
                         throw PatchException(PATCH_NAME + ": unexpected register count for " +
                             reference.definingClass + "->" + reference.name)
                     }
-                    val isRange = instruction.opcode.name.endsWith("_RANGE")
+                    val isRange = instruction.opcode == Opcode.INVOKE_VIRTUAL_RANGE ||
+                        instruction.opcode == Opcode.INVOKE_INTERFACE_RANGE
                     val registerList = if (isRange) {
                         "v" + registers.first() + " .. v" + registers.last()
                     } else {
@@ -193,7 +198,7 @@ private fun installStringReturn(method: Method, value: String, label: String) {
         ?: throw PatchException(PATCH_NAME + ": extension method " + label + "() has no implementation")
     val instructions = implementation.instructions.toList()
     if (implementation.registerCount < 1 || instructions.size != 2 ||
-        instructions[0].opcode.name != "CONST_4" || instructions[1].opcode.name != "RETURN_OBJECT") {
+        instructions[0].opcode != Opcode.CONST_4 || instructions[1].opcode != Opcode.RETURN_OBJECT) {
         throw PatchException(PATCH_NAME + ": extension method " + label + "() no longer has the expected fallback")
     }
     val mutableMethod = method as? app.revanced.com.android.tools.smali.dexlib2.mutable.MutableMethod
