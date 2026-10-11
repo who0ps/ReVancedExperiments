@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.2...v1.0.3) (2026-10-11)
+
+
+### Bug Fixes
+
+* disable Unlock Pro and Hide typing indicator by default ([b82fa7a](https://github.com/who0ps/ReVancedExperiments/commit/b82fa7a9e42eece2a1f490b9569f0d58f868d175))
+
 ## [1.0.2](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.1...v1.0.2) (2026-10-11)
 
 
