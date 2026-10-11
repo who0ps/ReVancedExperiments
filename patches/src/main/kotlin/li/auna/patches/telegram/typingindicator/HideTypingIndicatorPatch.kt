@@ -7,6 +7,7 @@ import li.auna.util.returnEarly
 val hideAdsPatch = bytecodePatch(
     name = "Hide typing indicator",
     description = "Hides your typing indicator from other users",
+    use = false,
 ) {
     compatibleWith(
         "org.telegram.messenger",
