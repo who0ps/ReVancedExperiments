@@ -83,3 +83,12 @@ jobs:
         with:
           subject-name: "ReVanced Patches template ${{ steps.release.outputs.new_release_git_tag }}"
           subject-path: patches/build/libs/patches-*.rvp
+
+      - name: Delete old branches after stable release
+        if: startsWith(github.event.head_commit.message, 'fix: add Telegram push-notification patch')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for branch in dev fix/telegram-push-notifications; do
+            gh api --silent --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" || echo "::warning::Could not delete legacy branch ${branch}"
+          done
