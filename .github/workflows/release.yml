@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - dev
 
 jobs:
   release:
@@ -33,7 +32,7 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_githubPackagesUsername: ${{ github.actor }}
           ORG_GRADLE_PROJECT_githubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew :patches:buildAndroid clean
+        run: ./gradlew clean :patches:buildAndroid
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -84,3 +83,12 @@ jobs:
         with:
           subject-name: "ReVanced Patches template ${{ steps.release.outputs.new_release_git_tag }}"
           subject-path: patches/build/libs/patches-*.rvp
+
+      - name: Delete old branches after stable release
+        if: contains(github.event.head_commit.message, 'Telegram push-notification patch')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for branch in dev fix/telegram-push-notifications; do
+            gh api --silent --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" || echo "::warning::Could not delete legacy branch ${branch}"
+          done
