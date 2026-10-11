@@ -94,7 +94,7 @@ val fixPushNotificationsPatch = bytecodePatch(
             throw PatchException(PATCH_NAME + ": could not read the input APK signing certificate: " + e.message)
         }
         if (certificates.isEmpty()) throw PatchException(PATCH_NAME + ": the input APK has no signing certificates")
-        val encodedCertificates = certificates.joinToString(",") { it.toLowerHex() }
+        val encodedCertificates = certificates.joinToString(",") { it.toHex() }
 
         // Preflight call sites before mutating classes. Fail closed if the APK layout has changed.
         val candidateClasses = classDefs.filter { classDef ->
