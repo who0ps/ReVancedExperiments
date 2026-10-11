@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2026 OpenAI
+// SPDX-FileCopyrightText: 2026 Cossale <hello@auna.li>
+// SPDX-FileCopyrightText: 2026 OpenAI (ReVanced Patcher port)
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package app.revanced.extension.telegram.notifications;
 
