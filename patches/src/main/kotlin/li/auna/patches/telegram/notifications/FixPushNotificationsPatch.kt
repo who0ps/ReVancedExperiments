@@ -156,7 +156,7 @@ val fixPushNotificationsPatch = bytecodePatch(
                 val implementation = method.implementation ?: continue
                 for (index in implementation.instructions.indices.reversed()) {
                     val instruction = implementation.instructions[index]
-                    if (instruction.opcode.name !in supportedInvokeOpcodes) continue
+                    if (instruction.opcode !in supportedInvokeOpcodes) continue
                     val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference ?: continue
                     val redirect = redirects.firstOrNull { it.matches(reference) } ?: continue
                     val registers = invokeRegisters(instruction)
