@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.1...v1.0.2) (2026-10-11)
+
+
+### Bug Fixes
+
+* add Telegram push-notification patch ([50df1f5](https://github.com/who0ps/ReVancedExperiments/commit/50df1f5ade0e856850a1a73aebb199d0950e6bfb))
+
 ## [1.0.1](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.0...v1.0.1) (2026-10-08)
 
 
