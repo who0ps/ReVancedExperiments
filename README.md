@@ -38,6 +38,8 @@ Some of the features the patches provide are:
 Compatible with `org.telegram.messenger`; most patches also support `org.telegram.messenger.web` and
 `uz.unnarsx.cherrygram`. "Hide video ads" is declared for `org.telegram.messenger` only. "Fix Push Notifications" currently targets `org.telegram.messenger` and is experimental; it changes local signature-query results only and does not change Android's installed APK signature. Validate it against the Telegram APK version being patched.
 
+The Telegram push-notification port is based on Cossale’s ReSeam patch and signature extension. Its derived files retain the `AGPL-3.0-or-later` license and attribution in their source headers; the rest of this repository remains under GPL-3.0.
+
 ## 🚀 How to get started
 
 > **Note**: ReVanced Manager v2.0+ is required.
