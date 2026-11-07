@@ -1,3 +1,10 @@
+## [1.0.10](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.9...v1.0.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* **telegram:** support Hide comments button on Telegram 13.2.1 ([50552ac](https://github.com/who0ps/ReVancedExperiments/commit/50552ac9e419b9e8fa391ff15da1ef0ad40bea82))
+
 ## [1.0.9](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.8...v1.0.9) (2026-11-07)
 
 
