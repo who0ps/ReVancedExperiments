@@ -77,10 +77,11 @@ val bypassIntegrityPatch = bytecodePatch(
 
         val bytesToHexCallIndex = bytesToHexCallIndices.single()
 
-        // Resolve the catch-all handler from the DEX try table. The handler's
-        // first object move writes the fallback value into the same local that
-        // receives Utilities.f([B)'s result on the normal path. This is more
-        // reliable than assuming labels, moves, and gotos occupy fixed indices.
+        // Resolve the catch-all handler from the DEX try table. In the
+        // inspected Telegram 13.2.1 DEX, both the normal path (v13 <- v2) and
+        // catch-all path (v13 <- v5) write the fingerprint local. Resolving
+        // the handler address avoids assumptions about labels or instruction
+        // adjacency and keeps the target tied to the protected call itself.
         val instructionAddresses = IntArray(instructions.size)
         var codeAddress = 0
         instructions.forEachIndexed { index, instruction ->
