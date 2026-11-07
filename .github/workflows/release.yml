@@ -100,25 +100,31 @@ jobs:
           gh release upload "$TAG" patches-bundle.json --clobber
 
       - name: Repair historical release assets
-        if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'chore(ci): repair historical release assets')
+        if: ${{ always() && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Earlier releases uploaded the validation bundle as well as the
-          # versioned release bundle. Keep only the asset whose name matches
-          # the tag, and restore the canonical ReVanced Manager JSON.
+          # Keep old releases consistent with the release tag and manager bundle metadata.
           for TAG in v1.0.2-dev.1 v1.0.4 v1.0.5; do
             VERSION="${TAG#v}"
             EXPECTED="patches-${VERSION}.rvp"
 
+            ASSETS=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.assets[].name')
             while IFS= read -r ASSET; do
               [ -z "$ASSET" ] && continue
-              if [[ "$ASSET" == patches-*.rvp && "$ASSET" != "$EXPECTED" ]]; then
-                gh release delete-asset "$TAG" "$ASSET" --yes
-              elif [[ "$ASSET" == patches-bundle-*.json && "$ASSET" != "patches-bundle.json" ]]; then
-                gh release delete-asset "$TAG" "$ASSET" --yes
-              fi
-            done < <(gh release view "$TAG" --json assets --jq '.assets[].name')
+              case "$ASSET" in
+                patches-*.rvp)
+                  if [ "$ASSET" != "$EXPECTED" ]; then
+                    gh release delete-asset "$TAG" "$ASSET" --yes
+                  fi
+                  ;;
+                patches-bundle-*.json)
+                  if [ "$ASSET" != "patches-bundle.json" ]; then
+                    gh release delete-asset "$TAG" "$ASSET" --yes
+                  fi
+                  ;;
+              esac
+            done <<< "$ASSETS"
 
             jq -n \
               --arg download_url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${EXPECTED}" \
@@ -129,10 +135,6 @@ jobs:
               > /tmp/patches-bundle.json
             gh release upload "$TAG" /tmp/patches-bundle.json --clobber
           done
-
-          gh api --silent --method DELETE \
-            "repos/${GITHUB_REPOSITORY}/git/refs/heads/fix/telegram-13.2.1-patch-targets" \
-            || echo "::notice::The Telegram 13.2.1 working branch was already removed."
 
       - name: Attest
         if: steps.release.outputs.new_release_published == 'true'
