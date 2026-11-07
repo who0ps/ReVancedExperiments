@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish:
-    if: github.event.head_commit.message == 'chore(release): publish-existing-v1.0.7'
+    if: "${{ contains(github.event.head_commit.message, 'publish-existing-v1.0.7') }}"
     name: Publish v1.0.7 bundle
     runs-on: ubuntu-latest
     permissions:
