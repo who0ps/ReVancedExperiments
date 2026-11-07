@@ -85,8 +85,8 @@ jobs:
           TAG: ${{ steps.release.outputs.new_release_git_tag }}
         run: |
           RVP="patches-${TAG#v}.rvp"
-          if ! gh release view "$TAG" --json assets --jq --arg rvp "$RVP" '.assets[].name | select(. == $rvp)' | grep -Fxq "$RVP"; then
-            echo "::error::Expected release asset $RVP is missing from $TAG"
+          if [ ! -f "patches/build/libs/$RVP" ]; then
+            echo "::error::Expected locally-built release artifact patches/build/libs/$RVP is missing"
             exit 1
           fi
           jq -n \
@@ -99,28 +99,36 @@ jobs:
           cat patches-bundle.json
           gh release upload "$TAG" patches-bundle.json --clobber
 
-      - name: Repair v1.0.4 bundle and delete merged working branch
-        if: github.ref == 'refs/heads/main'
+      - name: Repair historical release assets
+        if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'chore(ci): repair historical release assets')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # v1.0.4 accidentally included the previous version's .rvp because the
-          # build directory retained it and the release asset glob matched both.
-          if gh release view v1.0.4 --json assets --jq '.assets[].name | select(. == "patches-1.0.3.rvp")' | grep -Fxq "patches-1.0.3.rvp"; then
-            gh release delete-asset v1.0.4 patches-1.0.3.rvp --yes
-          fi
+          # Earlier releases uploaded the validation bundle as well as the
+          # versioned release bundle. Keep only the asset whose name matches
+          # the tag, and restore the canonical ReVanced Manager JSON.
+          for TAG in v1.0.2-dev.1 v1.0.4 v1.0.5; do
+            VERSION="${TAG#v}"
+            EXPECTED="patches-${VERSION}.rvp"
 
-          if gh release view v1.0.4 --json assets --jq '.assets[].name | select(. == "patches-bundle-v1.0.4.json")' | grep -Fxq "patches-bundle-v1.0.4.json"; then
-            gh release delete-asset v1.0.4 patches-bundle-v1.0.4.json --yes
-          fi
-          jq -n \
-            --arg download_url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v1.0.4/patches-1.0.4.rvp" \
-            --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%S)" \
-            --arg version "v1.0.4" \
-            --arg description "ReVanced Experiments v1.0.4" \
-            '{download_url: $download_url, created_at: $created_at, version: $version, description: $description}' \
-            > /tmp/patches-bundle.json
-          gh release upload v1.0.4 /tmp/patches-bundle.json --clobber
+            while IFS= read -r ASSET; do
+              [ -z "$ASSET" ] && continue
+              if [[ "$ASSET" == patches-*.rvp && "$ASSET" != "$EXPECTED" ]]; then
+                gh release delete-asset "$TAG" "$ASSET" --yes
+              elif [[ "$ASSET" == patches-bundle-*.json && "$ASSET" != "patches-bundle.json" ]]; then
+                gh release delete-asset "$TAG" "$ASSET" --yes
+              fi
+            done < <(gh release view "$TAG" --json assets --jq '.assets[].name')
+
+            jq -n \
+              --arg download_url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${EXPECTED}" \
+              --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%S)" \
+              --arg version "$TAG" \
+              --arg description "ReVanced Experiments $TAG" \
+              '{download_url: $download_url, created_at: $created_at, version: $version, description: $description}' \
+              > /tmp/patches-bundle.json
+            gh release upload "$TAG" /tmp/patches-bundle.json --clobber
+          done
 
           gh api --silent --method DELETE \
             "repos/${GITHUB_REPOSITORY}/git/refs/heads/fix/telegram-13.2.1-patch-targets" \
