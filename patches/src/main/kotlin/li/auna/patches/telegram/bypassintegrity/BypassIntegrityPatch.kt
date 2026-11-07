@@ -57,9 +57,9 @@ val bypassIntegrityPatch = bytecodePatch(
         }
 
         // In Telegram 13.2.1, AndroidUtilities.getCertificateSHA256Fingerprint() is
-        // inlined into ConnectionsManager.<init>(int). Its bytesToHex(byte[]) result
-        // is copied into a shared local on the normal path; the catch path writes
-        // the empty-string fallback into the same local before TimeZone is read.
+        // inlined into ConnectionsManager.<init>(int). The normal path copies the
+        // bytesToHex result into a shared local, jumps over the catch handler, and
+        // the catch path writes its fallback into that same local before TimeZone.
         val bytesToHexCallIndices = instructions.mapIndexedNotNull { index, instruction ->
             val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
             if (
