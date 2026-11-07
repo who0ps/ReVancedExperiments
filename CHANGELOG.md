@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.3...v1.0.4) (2026-11-07)
+
+
+### Bug Fixes
+
+* **telegram:** support Telegram 13.2.1 patch targets ([91dc12e](https://github.com/who0ps/ReVancedExperiments/commit/91dc12ef0d55dbca4bd327f835e7aa8f09580e9e))
+
 ## [1.0.3](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.2...v1.0.3) (2026-10-11)
 
 
