@@ -8,8 +8,14 @@ internal val BytecodePatchContext.bypassIntegrityMethod by gettingFirstMethodDec
     "basicIntegrity", "ctsProfileMatch",
 )
 
-internal val BytecodePatchContext.spoofSignatureMethod by gettingFirstMethodDeclarativelyOrNull {
-    name("getCertificateSHA256Fingerprint")
-    definingClass("Lorg/telegram/messenger/AndroidUtilities;")
-    returnType("Ljava/lang/String;")
+/**
+ * Telegram 13.2.1 inlines the former AndroidUtilities helper into
+ * ConnectionsManager.<init>(int). The SHA-256 result is moved into a
+ * single register immediately before TimeZone.getDefault().
+ */
+internal val BytecodePatchContext.signatureHashConstructorMethod by gettingFirstMethodDeclaratively {
+    name("<init>")
+    definingClass("Lorg/telegram/tgnet/ConnectionsManager;")
+    returnType("V")
+    parameterTypes("I")
 }
