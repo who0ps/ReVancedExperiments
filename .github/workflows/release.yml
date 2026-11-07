@@ -60,6 +60,14 @@ jobs:
           gpg --batch --pinentry-mode loopback --passphrase ''
           --quick-generate-key "ci <ci@users.noreply.github.com>" default default never
 
+      - name: Remove pre-release bundle before version bump
+        run: |
+          # The validation build above uses the current Gradle version. The
+          # semantic-release Gradle prepare/publish steps build the next version.
+          # Remove the validation artifact so the release asset glob sees only
+          # the new, tag-matching .rvp.
+          rm -f patches/build/libs/patches-*.rvp*
+
       - name: Release
         uses: cycjimmy/semantic-release-action@v5
         id: release
