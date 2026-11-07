@@ -79,31 +79,42 @@ val bypassIntegrityPatch = bytecodePatch(
         }
 
         val bytesToHexCallIndex = bytesToHexCallIndices.single()
-        val resultInstruction = instructions.getOrNull(bytesToHexCallIndex + 1)
-        if (
-            resultInstruction !is OneRegisterInstruction ||
-            resultInstruction.opcode.name != "MOVE_RESULT_OBJECT"
-        ) {
-            throw PatchException("Bypass Integrity: certificate hex result register not found")
-        }
-        val hexResultRegister = resultInstruction.registerA
+        // In the inspected DEX, the normal path copies the hex string to a
+        // shared local, jumps over the catch handler, and the catch path writes
+        // its fallback to that same local. Detect this control-flow shape
+        // directly; do not depend on MOVE_RESULT_OBJECT being exposed at a
+        // particular instruction index by the patcher.
+        val fingerprintRegisters = (bytesToHexCallIndex + 1 until timeZoneIndex - 2)
+            .mapNotNull { index ->
+                val normalMove = instructions[index] as? TwoRegisterInstruction
+                    ?: return@mapNotNull null
+                if (!normalMove.opcode.name.startsWith("MOVE_OBJECT")) {
+                    return@mapNotNull null
+                }
 
-        // Follow the normal-path MOVE_OBJECT from the bytesToHex result to the
-        // register shared with the catch handler. Do not assume it is adjacent
-        // to TimeZone.getDefault(): try/catch labels and a goto sit in between.
-        val fingerprintRegister = (bytesToHexCallIndex + 2 until timeZoneIndex)
-            .firstNotNullOfOrNull { index ->
-                val instruction = instructions[index]
+                val jump = instructions.getOrNull(index + 1)
+                    ?: return@mapNotNull null
+                if (!jump.opcode.name.startsWith("GOTO")) {
+                    return@mapNotNull null
+                }
+
+                val fallbackMove = instructions.getOrNull(index + 2) as? TwoRegisterInstruction
+                    ?: return@mapNotNull null
                 if (
-                    instruction is TwoRegisterInstruction &&
-                    instruction.opcode.name.startsWith("MOVE_OBJECT") &&
-                    instruction.registerB == hexResultRegister
+                    fallbackMove.opcode.name.startsWith("MOVE_OBJECT") &&
+                    fallbackMove.registerA == normalMove.registerA
                 ) {
-                    instruction.registerA
+                    normalMove.registerA
                 } else {
                     null
                 }
-            } ?: throw PatchException("Bypass Integrity: certificate fingerprint merge register not found")
+            }
+        if (fingerprintRegisters.size != 1) {
+            throw PatchException(
+                "Bypass Integrity: expected one certificate try/catch merge register, found ${fingerprintRegisters.size}"
+            )
+        }
+        val fingerprintRegister = fingerprintRegisters.single()
 
         constructor.addInstructions(
             timeZoneIndex,
