@@ -1,3 +1,12 @@
+## [1.0.5](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.4...v1.0.5) (2026-11-07)
+
+
+### Bug Fixes
+
+* **ci:** clean stale patch bundles before release ([219c10c](https://github.com/who0ps/ReVancedExperiments/commit/219c10cfef7097496ac13795de60010ee0510338))
+* **ci:** format release bundle validation output ([bb5a67c](https://github.com/who0ps/ReVancedExperiments/commit/bb5a67ca231b23181d14cef2561d34519ecf28aa))
+* **telegram:** follow inlined certificate fingerprint merge ([79317c3](https://github.com/who0ps/ReVancedExperiments/commit/79317c3f54c33bcbb04f7bb7a68f95134bc888b0))
+
 ## [1.0.4](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.3...v1.0.4) (2026-11-07)
 
 
