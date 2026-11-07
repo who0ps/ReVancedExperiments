@@ -43,8 +43,9 @@ val bypassIntegrityPatch = bytecodePatch(
         }
 
         val constructor = signatureHashConstructorMethod
-        val instructions = constructor.implementation?.instructions
+        val methodImplementation = constructor.implementation
             ?: throw PatchException("Bypass Integrity: ConnectionsManager constructor has no implementation")
+        val instructions = methodImplementation.instructions.toList()
 
         val timeZoneIndex = instructions.indexOfFirst { instruction ->
             val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
@@ -56,10 +57,6 @@ val bypassIntegrityPatch = bytecodePatch(
             throw PatchException("Bypass Integrity: certificate fingerprint merge point not found")
         }
 
-        // In Telegram 13.2.1, AndroidUtilities.getCertificateSHA256Fingerprint() is
-        // inlined into ConnectionsManager.<init>(int). The normal path copies the
-        // bytesToHex result into a shared local, jumps over the catch handler, and
-        // the catch path writes its fallback into that same local before TimeZone.
         val bytesToHexCallIndices = instructions.mapIndexedNotNull { index, instruction ->
             val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
             if (
@@ -79,42 +76,80 @@ val bypassIntegrityPatch = bytecodePatch(
         }
 
         val bytesToHexCallIndex = bytesToHexCallIndices.single()
-        // In the inspected DEX, the normal path copies the hex string to a
-        // shared local, jumps over the catch handler, and the catch path writes
-        // its fallback to that same local. Detect this control-flow shape
-        // directly; do not depend on MOVE_RESULT_OBJECT being exposed at a
-        // particular instruction index by the patcher.
-        val fingerprintRegisters = (bytesToHexCallIndex + 1 until timeZoneIndex - 2)
-            .mapNotNull { index ->
-                val normalMove = instructions[index] as? TwoRegisterInstruction
-                    ?: return@mapNotNull null
-                if (!normalMove.opcode.name.startsWith("MOVE_OBJECT")) {
-                    return@mapNotNull null
-                }
 
-                val jump = instructions.getOrNull(index + 1)
-                    ?: return@mapNotNull null
-                if (!jump.opcode.name.startsWith("GOTO")) {
-                    return@mapNotNull null
-                }
+        // Resolve the catch-all handler from the DEX try table. The handler's
+        // first object move writes the fallback value into the same local that
+        // receives Utilities.f([B)'s result on the normal path. This is more
+        // reliable than assuming labels, moves, and gotos occupy fixed indices.
+        val instructionAddresses = IntArray(instructions.size)
+        var codeAddress = 0
+        instructions.forEachIndexed { index, instruction ->
+            instructionAddresses[index] = codeAddress
+            codeAddress += instruction.codeUnits
+        }
 
-                val fallbackMove = instructions.getOrNull(index + 2) as? TwoRegisterInstruction
-                    ?: return@mapNotNull null
-                if (
-                    fallbackMove.opcode.name.startsWith("MOVE_OBJECT") &&
-                    fallbackMove.registerA == normalMove.registerA
-                ) {
-                    normalMove.registerA
+        val bytesToHexCodeAddress = instructionAddresses[bytesToHexCallIndex]
+        val matchingTryBlocks = methodImplementation.tryBlocks.filter { tryBlock ->
+            bytesToHexCodeAddress >= tryBlock.startCodeAddress &&
+                bytesToHexCodeAddress < tryBlock.startCodeAddress + tryBlock.codeUnitCount &&
+                tryBlock.exceptionHandlers.any { it.exceptionType == null }
+        }
+        val catchHandlerAddresses = matchingTryBlocks
+            .flatMap { tryBlock ->
+                tryBlock.exceptionHandlers
+                    .filter { it.exceptionType == null }
+                    .map { it.handlerCodeAddress }
+            }
+            .distinct()
+
+        if (catchHandlerAddresses.size != 1) {
+            throw PatchException(
+                "Bypass Integrity: expected one catch-all handler for certificate call, found ${catchHandlerAddresses.size}"
+            )
+        }
+
+        val catchHandlerAddress = catchHandlerAddresses.single()
+        val catchHandlerIndex = instructionAddresses.indexOf(catchHandlerAddress)
+        if (catchHandlerIndex < 0 || catchHandlerIndex >= timeZoneIndex) {
+            throw PatchException("Bypass Integrity: certificate catch-all handler location not found")
+        }
+
+        val fingerprintRegister = (catchHandlerIndex until minOf(catchHandlerIndex + 4, timeZoneIndex))
+            .firstNotNullOfOrNull { index ->
+                val instruction = instructions[index] as? TwoRegisterInstruction
+                    ?: return@firstNotNullOfOrNull null
+                if (instruction.opcode.name.startsWith("MOVE_OBJECT")) {
+                    instruction.registerA
                 } else {
                     null
                 }
+            } ?: throw PatchException("Bypass Integrity: certificate fallback register not found in catch handler")
+
+        // Confirm that the normal path writes to the same local within the
+        // protected region containing the bytesToHex call.
+        val tryEndCodeAddress = matchingTryBlocks
+            .filter { tryBlock ->
+                tryBlock.exceptionHandlers.any {
+                    it.exceptionType == null && it.handlerCodeAddress == catchHandlerAddress
+                }
             }
-        if (fingerprintRegisters.size != 1) {
+            .maxOf { it.startCodeAddress + it.codeUnitCount }
+
+        val hasNormalPathAssignment = instructions.indices.any { index ->
+            val address = instructionAddresses[index]
+            val instruction = instructions[index] as? TwoRegisterInstruction
+            address > bytesToHexCodeAddress &&
+                address < tryEndCodeAddress &&
+                index < timeZoneIndex &&
+                instruction != null &&
+                instruction.opcode.name.startsWith("MOVE_OBJECT") &&
+                instruction.registerA == fingerprintRegister
+        }
+        if (!hasNormalPathAssignment) {
             throw PatchException(
-                "Bypass Integrity: expected one certificate try/catch merge register, found ${fingerprintRegisters.size}"
+                "Bypass Integrity: catch handler register v$fingerprintRegister has no normal-path assignment"
             )
         }
-        val fingerprintRegister = fingerprintRegisters.single()
 
         constructor.addInstructions(
             timeZoneIndex,
