@@ -32,7 +32,17 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_githubPackagesUsername: ${{ github.actor }}
           ORG_GRADLE_PROJECT_githubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew clean :patches:buildAndroid
+        run: |
+          # Prevent stale versioned bundles from being picked up by the release asset glob.
+          rm -f patches/build/libs/patches-*.rvp*
+          ./gradlew clean :patches:buildAndroid --no-daemon
+
+          mapfile -t rvp_files < <(find patches/build/libs -maxdepth 1 -type f -name 'patches-*.rvp' -print)
+          if [ "${#rvp_files[@]}" -ne 1 ]; then
+            printf 'Expected exactly one versioned .rvp, found %s:\\n' "${#rvp_files[@]}"
+            printf '%s\\n' "${rvp_files[@]}"
+            exit 1
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -66,7 +76,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.release.outputs.new_release_git_tag }}
         run: |
-          RVP=$(gh release view "$TAG" --json assets --jq '[.assets[].name | select(endswith(".rvp"))][0]')
+          RVP="patches-${TAG#v}.rvp"
+          if ! gh release view "$TAG" --json assets --jq --arg rvp "$RVP" '.assets[].name | select(. == $rvp)' | grep -Fxq "$RVP"; then
+            echo "::error::Expected release asset $RVP is missing from $TAG"
+            exit 1
+          fi
           jq -n \
             --arg download_url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${RVP}" \
             --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%S)" \
@@ -76,6 +90,30 @@ jobs:
             > patches-bundle.json
           cat patches-bundle.json
           gh release upload "$TAG" patches-bundle.json --clobber
+
+      - name: Repair v1.0.4 bundle and delete merged working branch
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # v1.0.4 accidentally included the previous version's .rvp because the
+          # build directory retained it and the release asset glob matched both.
+          if gh release view v1.0.4 --json assets --jq '.assets[].name | select(. == "patches-1.0.3.rvp")' | grep -Fxq "patches-1.0.3.rvp"; then
+            gh release delete-asset v1.0.4 patches-1.0.3.rvp --yes
+          fi
+
+          jq -n \
+            --arg download_url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v1.0.4/patches-1.0.4.rvp" \
+            --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%S)" \
+            --arg version "v1.0.4" \
+            --arg description "ReVanced Experiments v1.0.4" \
+            '{download_url: $download_url, created_at: $created_at, version: $version, description: $description}' \
+            > /tmp/patches-bundle-v1.0.4.json
+          gh release upload v1.0.4 /tmp/patches-bundle-v1.0.4.json --clobber
+
+          gh api --silent --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/git/refs/heads/fix/telegram-13.2.1-patch-targets" \
+            || echo "::notice::The Telegram 13.2.1 working branch was already removed."
 
       - name: Attest
         if: steps.release.outputs.new_release_published == 'true'
