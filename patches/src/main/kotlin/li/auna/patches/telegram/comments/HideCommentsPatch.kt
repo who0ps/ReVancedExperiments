@@ -1,5 +1,6 @@
 package li.auna.patches.telegram.comments
 
+import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.bytecodePatch
 import li.auna.util.returnEarly
 
@@ -16,6 +17,19 @@ val hideCommentsPatch = bytecodePatch(
     )
 
     apply {
-        isLinkedToChatMethod.returnEarly(false)
+        val candidates = findIsLinkedToChatMethod()
+        if (candidates.size != 1) {
+            throw PatchException(
+                "Hide comments button: expected one MessageObject.isLinkedToChat(long) method, found ${candidates.size}"
+            )
+        }
+
+        val candidate = candidates.single()
+        val mutableMethod = firstClassDef(candidate.definingClass).methods.single { method ->
+            method.name == candidate.name &&
+                method.returnType == candidate.returnType &&
+                method.parameterTypes.map { it.toString() } == candidate.parameterTypes.map { it.toString() }
+        }
+        mutableMethod.returnEarly(false)
     }
 }
