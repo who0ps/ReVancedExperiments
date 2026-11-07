@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.6...v1.0.7) (2026-11-07)
+
+
+### Bug Fixes
+
+* **telegram:** resolve certificate register through catch merge ([c3aa0cb](https://github.com/who0ps/ReVancedExperiments/commit/c3aa0cb72fd8cd7a7f7ef62f32ca3e2a3b95435e))
+
 ## [1.0.6](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.5...v1.0.6) (2026-11-07)
 
 
