@@ -11,7 +11,8 @@ internal val BytecodePatchContext.bypassIntegrityMethod by gettingFirstMethodDec
 /**
  * Telegram 13.2.1 inlines the former AndroidUtilities helper into
  * ConnectionsManager.<init>(int). The SHA-256 result is moved into a
- * single register immediately before TimeZone.getDefault().
+ * bytesToHex result is moved to a shared register after the try/catch merge.
+ * The DEX target is followed from that method result, not by instruction adjacency.
  */
 internal val BytecodePatchContext.signatureHashConstructorMethod by gettingFirstMethodDeclaratively {
     name("<init>")
