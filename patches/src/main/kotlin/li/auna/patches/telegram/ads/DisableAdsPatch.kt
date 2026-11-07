@@ -1,5 +1,6 @@
 package li.auna.patches.telegram.ads
 
+import app.revanced.patcher.*
 import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.bytecodePatch
 import li.auna.util.returnEarly
