@@ -56,15 +56,54 @@ val bypassIntegrityPatch = bytecodePatch(
             throw PatchException("Bypass Integrity: certificate fingerprint merge point not found")
         }
 
-        // The last MOVE_OBJECT before TimeZone.getDefault() receives the SHA-256
-        // fingerprint on both the normal and exception paths (v13 in Telegram 13.2.1).
-        val mergeInstruction = instructions[timeZoneIndex - 1]
-        if (mergeInstruction !is TwoRegisterInstruction ||
-            !mergeInstruction.opcode.name.startsWith("MOVE_OBJECT")
-        ) {
-            throw PatchException("Bypass Integrity: certificate fingerprint register not found")
+        // In Telegram 13.2.1, AndroidUtilities.getCertificateSHA256Fingerprint() is
+        // inlined into ConnectionsManager.<init>(int). Its bytesToHex(byte[]) result
+        // is copied into a shared local on the normal path; the catch path writes
+        // the empty-string fallback into the same local before TimeZone is read.
+        val bytesToHexCallIndices = instructions.mapIndexedNotNull { index, instruction ->
+            val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+            if (
+                reference?.definingClass == "Lorg/telegram/messenger/Utilities;" &&
+                reference.returnType == "Ljava/lang/String;" &&
+                reference.parameterTypes.map { it.toString() } == listOf("[B")
+            ) {
+                index
+            } else {
+                null
+            }
         }
-        val fingerprintRegister = mergeInstruction.registerA
+        if (bytesToHexCallIndices.size != 1) {
+            throw PatchException(
+                "Bypass Integrity: expected one certificate bytesToHex call, found ${bytesToHexCallIndices.size}"
+            )
+        }
+
+        val bytesToHexCallIndex = bytesToHexCallIndices.single()
+        val resultInstruction = instructions.getOrNull(bytesToHexCallIndex + 1)
+        if (
+            resultInstruction !is OneRegisterInstruction ||
+            resultInstruction.opcode.name != "MOVE_RESULT_OBJECT"
+        ) {
+            throw PatchException("Bypass Integrity: certificate hex result register not found")
+        }
+        val hexResultRegister = resultInstruction.registerA
+
+        // Follow the normal-path MOVE_OBJECT from the bytesToHex result to the
+        // register shared with the catch handler. Do not assume it is adjacent
+        // to TimeZone.getDefault(): try/catch labels and a goto sit in between.
+        val fingerprintRegister = (bytesToHexCallIndex + 2 until timeZoneIndex)
+            .firstNotNullOfOrNull { index ->
+                val instruction = instructions[index]
+                if (
+                    instruction is TwoRegisterInstruction &&
+                    instruction.opcode.name.startsWith("MOVE_OBJECT") &&
+                    instruction.registerB == hexResultRegister
+                ) {
+                    instruction.registerA
+                } else {
+                    null
+                }
+            } ?: throw PatchException("Bypass Integrity: certificate fingerprint merge register not found")
 
         constructor.addInstructions(
             timeZoneIndex,
