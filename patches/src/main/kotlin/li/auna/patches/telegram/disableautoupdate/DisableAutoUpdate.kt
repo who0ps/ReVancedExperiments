@@ -1,7 +1,13 @@
 package li.auna.patches.telegram.disableautoupdate
 
+import app.revanced.patcher.extensions.addInstructions
+import app.revanced.patcher.extensions.getInstruction
+import app.revanced.patcher.extensions.replaceInstruction
+import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.bytecodePatch
-import li.auna.util.returnEarly
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
 @Suppress("unused")
 val unlockProPatch = bytecodePatch(
@@ -13,9 +19,24 @@ val unlockProPatch = bytecodePatch(
     )
 
     apply {
-        // Never report a new version as available, so no update badge/popup is created.
-        setNewAppVersionAvailableMethod.returnEarly(false)
-        // Never show the blocking "update required" screen.
-        showBlockingUpdateMethod.returnEarly()
+        val method = launchActivityOnResumeMethod
+        val updateField = "Lorg/telegram/messenger/tz;->j1:Lorg/telegram/tgnet/TLRPC\$TL_help_appUpdate;"
+
+        val updateReadIndex = method.implementation!!.instructions.indexOfFirst { instruction ->
+            val field = (instruction as? ReferenceInstruction)?.reference as? FieldReference
+            field?.definingClass == "Lorg/telegram/messenger/tz;" &&
+                field.name == "j1" &&
+                field.type == "Lorg/telegram/tgnet/TLRPC\$TL_help_appUpdate;"
+        }
+        if (updateReadIndex < 0) {
+            throw PatchException("Disable Auto Update: pending app update read not found in LaunchActivity.onResume()")
+        }
+
+        val updateRegister = method.getInstruction<OneRegisterInstruction>(updateReadIndex).registerA
+        method.replaceInstruction(updateReadIndex, "const/4 v$updateRegister, 0x0")
+        method.addInstructions(
+            updateReadIndex + 1,
+            "sput-object v$updateRegister, $updateField"
+        )
     }
 }
