@@ -25,7 +25,7 @@ These are version-specific observations. Re-inspect source and DEX when the Tele
 
 ## Release hygiene
 
-- The release configuration uses a glob over `patches/build/libs/patches-*.rvp`. Old versioned files left in that directory can be uploaded alongside the current bundle.
-- Remove stale `.rvp` outputs before building, and fail the workflow unless exactly one versioned `.rvp` is present.
+- The release configuration uses a glob over `patches/build/libs/patches-*.rvp`. The release workflow first builds the current Gradle version for validation, then semantic-release bumps the Gradle version and builds the next version during its prepare/publish phase. Without cleanup between those phases, both versioned `.rvp` files are uploaded.
+- Remove stale `.rvp` outputs before the validation build, and fail unless exactly one validation `.rvp` is present. Then remove that validation artifact again immediately before semantic-release; its publish step should leave only the package matching the new tag.
 - In the ReVanced Manager bundle JSON, select `patches-${TAG#v}.rvp` by exact name. Never select the first asset whose name ends in `.rvp`.
-- After publishing, verify the release contains the expected bundle and that `patches-bundle.json` points to that exact asset. Check the uploaded asset's SHA-256 when reporting the build.
+- After publishing, verify the release contains exactly one `.rvp`, that its name matches the tag, and that `patches-bundle.json` points to it. Check the uploaded asset's SHA-256 when reporting the build.
