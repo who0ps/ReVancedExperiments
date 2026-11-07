@@ -1,3 +1,10 @@
+## [1.0.9](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.8...v1.0.9) (2026-11-07)
+
+
+### Bug Fixes
+
+* **telegram:** derive Bypass Integrity fingerprint register from normal path only ([487c43a](https://github.com/who0ps/ReVancedExperiments/commit/487c43a17fd7f25f5243fb020b786a7aeea5b64c))
+
 ## [1.0.8](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.7...v1.0.8) (2026-11-07)
 
 
