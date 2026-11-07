@@ -39,8 +39,8 @@ jobs:
 
           mapfile -t rvp_files < <(find patches/build/libs -maxdepth 1 -type f -name 'patches-*.rvp' -print)
           if [ "${#rvp_files[@]}" -ne 1 ]; then
-            printf 'Expected exactly one versioned .rvp, found %s:\\n' "${#rvp_files[@]}"
-            printf '%s\\n' "${rvp_files[@]}"
+            printf 'Expected exactly one versioned .rvp, found %s:\n' "${#rvp_files[@]}"
+            printf '%s\n' "${rvp_files[@]}"
             exit 1
           fi
 
