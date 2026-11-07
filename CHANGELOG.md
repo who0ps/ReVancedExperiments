@@ -1,3 +1,10 @@
+## [1.0.8](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.7...v1.0.8) (2026-11-07)
+
+
+### Bug Fixes
+
+* **telegram:** resolve fingerprint local from catch-all handler ([9352c00](https://github.com/who0ps/ReVancedExperiments/commit/9352c007c72028c4cfddf51bd92fde60face35f2))
+
 ## [1.0.7](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.6...v1.0.7) (2026-11-07)
 
 
