@@ -8,9 +8,10 @@ import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.bytecodePatch
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import li.auna.util.indexOfFirstInstruction
+import li.auna.util.isBranchInstruction
+import li.auna.util.writeRegister
 
 private const val TELEGRAM_SIGNATURE_SHA256 =
     "49C1522548EBACD46CE322B6FD47F6092BB745D0F88082145CAF35E14DCC38E1"
@@ -77,84 +78,29 @@ val bypassIntegrityPatch = bytecodePatch(
 
         val bytesToHexCallIndex = bytesToHexCallIndices.single()
 
-        // Resolve the catch-all handler from the DEX try table. In the
-        // inspected Telegram 13.2.1 DEX, both the normal path (v13 <- v2) and
-        // catch-all path (v13 <- v5) write the fingerprint local. Resolving
-        // the handler address avoids assumptions about labels or instruction
-        // adjacency and keeps the target tied to the protected call itself.
-        val instructionAddresses = IntArray(instructions.size)
-        var codeAddress = 0
-        instructions.forEachIndexed { index, instruction ->
-            instructionAddresses[index] = codeAddress
-            codeAddress += instruction.codeUnits
+        // The bytesToHex() call result (a MOVE_RESULT_OBJECT) is the start of the
+        // normal path. It may then be renamed into a shared local before the
+        // normal path's unconditional branch jumps past the exception's
+        // catch-all fallback assignment, converging with it at timeZoneIndex.
+        // Walk forward from the call, tracking the last register written, and
+        // stop at that branch. This only depends on the normal path's shape,
+        // not on the exact instruction the catch-all handler uses to write its
+        // fallback value (which has differed across Telegram builds), since
+        // both paths must write the same local for the merge to be valid.
+        var fingerprintRegister: Int? = null
+        var scanIndex = bytesToHexCallIndex + 1
+        while (scanIndex < timeZoneIndex) {
+            val instruction = instructions[scanIndex]
+            if (instruction.isBranchInstruction) break
+            instruction.writeRegister?.let { fingerprintRegister = it }
+            scanIndex++
         }
-
-        val bytesToHexCodeAddress = instructionAddresses[bytesToHexCallIndex]
-        val matchingTryBlocks = methodImplementation.tryBlocks.filter { tryBlock ->
-            bytesToHexCodeAddress >= tryBlock.startCodeAddress &&
-                bytesToHexCodeAddress < tryBlock.startCodeAddress + tryBlock.codeUnitCount &&
-                tryBlock.exceptionHandlers.any { it.exceptionType == null }
-        }
-        val catchHandlerAddresses = matchingTryBlocks
-            .flatMap { tryBlock ->
-                tryBlock.exceptionHandlers
-                    .filter { it.exceptionType == null }
-                    .map { it.handlerCodeAddress }
-            }
-            .distinct()
-
-        if (catchHandlerAddresses.size != 1) {
-            throw PatchException(
-                "Bypass Integrity: expected one catch-all handler for certificate call, found ${catchHandlerAddresses.size}"
-            )
-        }
-
-        val catchHandlerAddress = catchHandlerAddresses.single()
-        val catchHandlerIndex = instructionAddresses.indexOf(catchHandlerAddress)
-        if (catchHandlerIndex < 0 || catchHandlerIndex >= timeZoneIndex) {
-            throw PatchException("Bypass Integrity: certificate catch-all handler location not found")
-        }
-
-        val fingerprintRegister = (catchHandlerIndex until minOf(catchHandlerIndex + 4, timeZoneIndex))
-            .firstNotNullOfOrNull { index ->
-                val instruction = instructions[index] as? TwoRegisterInstruction
-                    ?: return@firstNotNullOfOrNull null
-                if (instruction.opcode.name.startsWith("MOVE_OBJECT")) {
-                    instruction.registerA
-                } else {
-                    null
-                }
-            } ?: throw PatchException("Bypass Integrity: certificate fallback register not found in catch handler")
-
-        // Confirm that the normal path writes to the same local within the
-        // protected region containing the bytesToHex call.
-        val tryEndCodeAddress = matchingTryBlocks
-            .filter { tryBlock ->
-                tryBlock.exceptionHandlers.any {
-                    it.exceptionType == null && it.handlerCodeAddress == catchHandlerAddress
-                }
-            }
-            .maxOf { it.startCodeAddress + it.codeUnitCount }
-
-        val hasNormalPathAssignment = instructions.indices.any { index ->
-            val address = instructionAddresses[index]
-            val instruction = instructions[index] as? TwoRegisterInstruction
-            address > bytesToHexCodeAddress &&
-                address < tryEndCodeAddress &&
-                index < timeZoneIndex &&
-                instruction != null &&
-                instruction.opcode.name.startsWith("MOVE_OBJECT") &&
-                instruction.registerA == fingerprintRegister
-        }
-        if (!hasNormalPathAssignment) {
-            throw PatchException(
-                "Bypass Integrity: catch handler register v$fingerprintRegister has no normal-path assignment"
-            )
-        }
+        val register = fingerprintRegister
+            ?: throw PatchException("Bypass Integrity: certificate fingerprint register not found after bytesToHex call")
 
         constructor.addInstructions(
             timeZoneIndex,
-            """const-string v$fingerprintRegister, "$TELEGRAM_SIGNATURE_SHA256""""
+            """const-string v$register, "$TELEGRAM_SIGNATURE_SHA256""""
         )
     }
 }
