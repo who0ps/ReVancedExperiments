@@ -1,0 +1,87 @@
+name: Publish existing tagged release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    if: github.event.head_commit.message == 'chore(release): publish-existing-v1.0.7'
+    name: Publish v1.0.7 bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v6
+        with:
+          ref: v1.0.7
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Cache Gradle
+        uses: burrunan/gradle-cache-action@v3
+
+      - name: Build tagged patch bundle
+        env:
+          ORG_GRADLE_PROJECT_githubPackagesUsername: ${{ github.actor }}
+          ORG_GRADLE_PROJECT_githubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="v1.0.7"
+          VERSION="${TAG#v}"
+          EXPECTED="patches-${VERSION}.rvp"
+          ACTUAL_VERSION="$(sed -n 's/^version = //p' gradle.properties | tr -d '[:space:]')"
+          test "v${ACTUAL_VERSION}" = "$TAG"
+          rm -f patches/build/libs/patches-*.rvp*
+          ./gradlew clean :patches:buildAndroid --no-daemon
+          test -f "patches/build/libs/$EXPECTED"
+          mapfile -t RVP_FILES < <(find patches/build/libs -maxdepth 1 -type f -name 'patches-*.rvp' -print)
+          test "${#RVP_FILES[@]}" -eq 1
+          test "${RVP_FILES[0]}" = "patches/build/libs/$EXPECTED"
+          sha256sum "patches/build/libs/$EXPECTED"
+
+      - name: Create GitHub release and upload bundle metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="v1.0.7"
+          VERSION="${TAG#v}"
+          RVP="patches-${VERSION}.rvp"
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${RVP}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "patches/build/libs/$RVP" --clobber
+          else
+            gh release create "$TAG" "patches/build/libs/$RVP" \
+              --title "$TAG" \
+              --notes "ReVanced Experiments ${TAG}. Includes the Telegram 13.2.1 patch updates."
+          fi
+
+          jq -n \
+            --arg download_url "$DOWNLOAD_URL" \
+            --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%S)" \
+            --arg version "$TAG" \
+            --arg description "ReVanced Experiments ${TAG}" \
+            '{download_url: $download_url, created_at: $created_at, version: $version, description: $description}' \
+            > patches-bundle.json
+          gh release upload "$TAG" patches-bundle.json --clobber
+
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/$TAG" --jq '.assets[] | [.name, .size, .digest] | @tsv'
+          COUNT="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/$TAG" --jq '[.assets[] | select(.name | endswith(".rvp"))] | length')"
+          test "$COUNT" -eq 1
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: "ReVanced Patches ${{ github.ref_name }}"
+          subject-path: patches/build/libs/patches-1.0.7.rvp
