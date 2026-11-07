@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.5...v1.0.6) (2026-11-07)
+
+
+### Bug Fixes
+
+* **ci:** repair historical release metadata assets ([68d1740](https://github.com/who0ps/ReVancedExperiments/commit/68d1740e82f5965aad68ea683537e30b0199ca44))
+
 ## [1.0.5](https://github.com/who0ps/ReVancedExperiments/compare/v1.0.4...v1.0.5) (2026-11-07)
 
 
