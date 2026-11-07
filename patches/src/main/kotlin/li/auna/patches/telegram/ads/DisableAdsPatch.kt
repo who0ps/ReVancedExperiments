@@ -1,5 +1,7 @@
 package li.auna.patches.telegram.ads
 
+import app.revanced.patcher.extensions.firstMethod
+import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.bytecodePatch
 import li.auna.util.returnEarly
 
@@ -15,6 +17,12 @@ val hideAdsPatch = bytecodePatch(
     )
 
     apply {
-        getSponsoredMessagesMethod.returnEarly()
+        val candidates = findGetSponsoredMessagesMethod()
+        if (candidates.size != 1) {
+            throw PatchException(
+                "Hide sponsored ads: expected one messages.getSponsoredMessages method, found ${candidates.size}"
+            )
+        }
+        firstMethod(candidates.single()).returnEarly()
     }
 }
